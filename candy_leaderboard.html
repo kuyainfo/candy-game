@@ -140,6 +140,27 @@ html, body {
   flex-shrink: 0; text-align: center; margin-top: 20px;
   font-size: 11px; color: rgba(255,255,255,0.15); letter-spacing: 2px;
 }
+
+/* ── 清除按鈕 ── */
+#clear-btn {
+  margin-top: 10px;
+  padding: 8px 18px;
+  border-radius: 50px;
+  border: 1.5px solid rgba(255,107,107,0.5);
+  background: rgba(255,107,107,0.1);
+  color: #ff6b6b;
+  font-size: 12px;
+  font-family: inherit;
+  letter-spacing: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+#clear-btn:hover {
+  background: rgba(255,107,107,0.25);
+  border-color: #ff6b6b;
+  box-shadow: 0 0 12px rgba(255,107,107,0.3);
+}
+
 </style>
 </head>
 <body>
@@ -158,6 +179,7 @@ html, body {
       <div><span class="live-dot"></span><span class="live-label">LIVE</span></div>
       <div class="player-count" id="player-count">0</div>
       <div class="player-count-label">PLAYERS</div>
+      <button id="clear-btn">🗑 清除所有資料</button>
     </div>
   </div>
 
@@ -259,6 +281,16 @@ onValue(scoresRef, (snap)=>{
   if(snap.exists()) render(snap.val());
   else render({});
 });
+
+// 清除所有資料
+import { remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+document.getElementById('clear-btn').addEventListener('click', async ()=>{
+  if(!confirm('確定要清除所有玩家分數嗎？\n此動作無法復原。')) return;
+  if(!confirm('再次確認：清除後排行榜將歸零，繼續嗎？')) return;
+  await remove(ref(db, 'scores'));
+  alert('✅ 已清除所有資料！');
+});
+
 </script>
 </body>
 </html>
