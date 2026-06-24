@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>點心屋派對</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; overflow: hidden;
+  background: #1a0a2e;
+  font-family: 'Arial Rounded MT Bold', 'Arial Black', Arial, sans-serif;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── 背景 ── */
+#bg {
+  position: fixed; inset: 0; z-index: 0;
+  background: linear-gradient(160deg, #2d1454 0%, #1a0a2e 50%, #0d1f3a 100%);
+  overflow: hidden;
+}
+.bg-star {
+  position: absolute; border-radius: 50%; background: #fff;
+  animation: twinkle linear infinite;
+}
+@keyframes twinkle { 0%,100%{opacity:0.05} 50%{opacity:0.5} }
+.bg-candy {
+  position: absolute; font-size: 28px; opacity: 0.06;
+  animation: floatCandy linear infinite;
+}
+@keyframes floatCandy {
+  from { transform: translateY(100vh) rotate(0deg); }
+  to   { transform: translateY(-120px) rotate(360deg); }
+}
+
+/* ── 主容器 ── */
+#wrap {
+  width: 100vw; max-width: 420px; height: 100vh;
+  margin: 0 auto; position: relative; z-index: 1;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+/* ── 名字輸入畫面 ── */
+#name-screen {
+  position: absolute; inset: 0; z-index: 100;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 32px 24px;
+  background: linear-gradient(160deg, #2d1454cc, #1a0a2ecc);
+  backdrop-filter: blur(12px);
+}
+.ns-logo { font-size: 56px; margin-bottom: 8px; animation: bounce 1.2s ease-in-out infinite alternate; }
+@keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-10px)} }
+.ns-title {
+  font-size: 28px; font-weight: 900; color: #fff;
+  text-shadow: 0 0 20px #ff85c8, 0 0 40px #ff85c8;
+  letter-spacing: 2px; margin-bottom: 4px;
+}
+.ns-sub { font-size: 13px; color: #c9a8f0; margin-bottom: 36px; letter-spacing: 1px; }
+.ns-label { font-size: 13px; color: #e0c8ff; margin-bottom: 10px; letter-spacing: 1px; }
+#name-input {
+  width: 100%; max-width: 280px; padding: 14px 20px;
+  border-radius: 50px; border: 2px solid #ff85c8;
+  background: rgba(255,255,255,0.08); color: #fff;
+  font-size: 18px; font-family: inherit; text-align: center;
+  outline: none; margin-bottom: 20px;
+  box-shadow: 0 0 20px rgba(255,133,200,0.3);
+}
+#name-input::placeholder { color: rgba(255,255,255,0.3); }
+#start-btn {
+  width: 100%; max-width: 280px; padding: 16px;
+  border-radius: 50px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #ff6eb4, #ff85c8, #ffd32a);
+  color: #fff; font-size: 20px; font-weight: 900;
+  font-family: inherit; letter-spacing: 2px;
+  box-shadow: 0 4px 20px rgba(255,110,180,0.5);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+#start-btn:active { transform: scale(0.96); }
+.ns-deco {
+  display: flex; gap: 12px; margin-top: 32px; font-size: 28px;
+  animation: wiggle 2s ease-in-out infinite;
+}
+@keyframes wiggle { 0%,100%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} }
+
+/* ── HUD ── */
+#hud {
+  width: 100%; display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 16px 8px;
+  background: rgba(20,8,40,0.85); backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,133,200,0.2);
+  flex-shrink: 0;
+}
+.hud-block { text-align: center; min-width: 72px; }
+.hud-label { font-size: 9px; color: rgba(255,200,240,0.5); letter-spacing: 2px; margin-bottom: 2px; }
+.hud-val { font-size: 22px; color: #fff; font-weight: 900; line-height: 1; }
+#score-val { color: #ffd32a; }
+#combo-val { color: #ff85c8; }
+#timer-val { color: #a29bfe; }
+#player-name-hud { font-size: 11px; color: #e0c8ff; opacity: 0.7; margin-top: 2px; }
+
+/* 計時條 */
+#timer-bar-wrap { width: 100%; height: 5px; background: rgba(255,255,255,0.05); flex-shrink: 0; }
+#timer-bar {
+  height: 100%; width: 100%;
+  background: linear-gradient(90deg, #a29bfe, #ff85c8, #ffd32a);
+  transition: width 0.1s linear;
+}
+
+/* ── 棋盤區 ── */
+#board-wrap {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  padding: 8px 10px;
+  position: relative; width: 100%;
+}
+#board {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 5px;
+  width: 100%; max-width: 380px;
+}
+.cell {
+  aspect-ratio: 1; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(24px, 6.5vw, 38px);
+  background: rgba(255,255,255,0.06);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  position: relative;
+  transition: transform 0.08s, filter 0.08s;
+  cursor: pointer;
+}
+.cell.selected {
+  transform: scale(0.88);
+  filter: brightness(1.6) drop-shadow(0 0 8px currentColor);
+  border-color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.18);
+  z-index: 2;
+}
+.cell.matched { animation: popOut 0.25s ease forwards; }
+@keyframes popOut {
+  0%   { transform: scale(1); opacity: 1; }
+  50%  { transform: scale(1.35); opacity: 0.8; }
+  100% { transform: scale(0); opacity: 0; }
+}
+.cell.falling { animation: fallIn 0.22s cubic-bezier(.2,.8,.4,1.2) forwards; }
+@keyframes fallIn {
+  from { transform: translateY(-40px) scale(0.7); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* 選取連線覆蓋層 */
+#line-canvas { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
+
+/* ── 分數浮現 ── */
+.score-popup {
+  position: absolute; z-index: 20; pointer-events: none;
+  color: #ffd32a; font-size: 22px; font-weight: 900;
+  text-shadow: 0 0 10px rgba(255,211,42,0.8);
+  animation: floatUp 0.8s ease forwards;
+}
+@keyframes floatUp {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to   { opacity: 0; transform: translateY(-60px) scale(1.3); }
+}
+
+/* Combo 提示 */
+#combo-msg {
+  position: absolute; top: 30%; left: 50%; transform: translateX(-50%);
+  font-size: 26px; font-weight: 900; color: #ff85c8;
+  text-shadow: 0 0 20px #ff85c8, 0 0 40px #ff85c8;
+  pointer-events: none; z-index: 30; opacity: 0;
+  white-space: nowrap;
+}
+#combo-msg.show { opacity: 1; animation: comboPop 0.6s ease forwards; }
+@keyframes comboPop {
+  0%   { transform: translateX(-50%) scale(0.8); }
+  40%  { transform: translateX(-50%) scale(1.2); }
+  100% { transform: translateX(-50%) scale(1); opacity: 0; }
+}
+
+/* ══════════════════════════════
+   結束畫面
+══════════════════════════════ */
+#end-screen {
+  position: absolute; inset: 0; z-index: 100;
+  display: none; flex-direction: column;
+  align-items: center; justify-content: space-between;
+  padding: 28px 24px 32px;
+  background: linear-gradient(160deg, #2d1454ee, #1a0a2eee);
+  backdrop-filter: blur(16px);
+  overflow-y: auto;
+}
+
+/* 上半：標題 */
+.end-header { text-align: center; }
+.end-title { font-size: 22px; font-weight: 900; color: #fff; letter-spacing: 2px; margin-bottom: 2px; }
+.end-player { font-size: 13px; color: #c9a8f0; }
+
+/* 中間：糖果屋 */
+.end-house-wrap {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  gap: 10px; padding: 10px 0;
+}
+.house-svg-wrap {
+  width: 180px; height: 160px;
+  filter: drop-shadow(0 0 20px var(--house-glow, #ff85c8));
+  animation: houseFloat 2.4s ease-in-out infinite alternate;
+}
+@keyframes houseFloat {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-8px); }
+}
+.house-rank-label {
+  font-size: 13px; color: rgba(255,255,255,0.5); letter-spacing: 2px;
+}
+.house-rank-name {
+  font-size: 22px; font-weight: 900; color: #fff;
+  text-shadow: 0 0 16px var(--house-glow, #ff85c8);
+  letter-spacing: 1px;
+}
+
+/* 分數區塊 */
+.end-scores {
+  width: 100%; display: flex; gap: 10px; margin-bottom: 4px;
+}
+.end-score-box {
+  flex: 1; background: rgba(255,211,42,0.08);
+  border: 1.5px solid rgba(255,211,42,0.3);
+  border-radius: 16px; padding: 14px 10px; text-align: center;
+}
+.end-score-box.best {
+  background: rgba(162,155,254,0.08);
+  border-color: rgba(162,155,254,0.3);
+}
+.end-score-label { font-size: 9px; color: rgba(255,200,200,0.5); letter-spacing: 2px; margin-bottom: 4px; }
+.end-score-val { font-size: 36px; font-weight: 900; color: #ffd32a; line-height: 1; }
+.end-score-box.best .end-score-val { color: #a29bfe; font-size: 28px; }
+.end-new-best {
+  font-size: 13px; color: #ffd32a; font-weight: 900; letter-spacing: 1px;
+  animation: pulse 0.8s ease infinite alternate;
+  display: none; text-align: center; margin-bottom: 2px;
+}
+@keyframes pulse { from{opacity:0.4} to{opacity:1} }
+
+/* 按鈕區 */
+.end-btn-area { width: 100%; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+#retry-btn {
+  width: 100%; max-width: 280px; padding: 15px;
+  border-radius: 50px; border: none; cursor: pointer;
+  background: linear-gradient(135deg, #ff6eb4, #ffd32a);
+  color: #fff; font-size: 18px; font-weight: 900;
+  font-family: inherit; letter-spacing: 2px;
+  box-shadow: 0 4px 20px rgba(255,110,180,0.4);
+  transition: transform 0.1s;
+}
+#retry-btn:active { transform: scale(0.96); }
+</style>
+</head>
+<body>
+<div id="bg"></div>
+
+<div id="wrap">
+  <!-- 名字輸入畫面 -->
+  <div id="name-screen">
+    <div class="ns-logo">🏠</div>
+    <div class="ns-title">點心屋派對</div>
+    <div class="ns-sub">CANDY HOUSE PARTY</div>
+    <div class="ns-label">輸入你的名字開始遊戲</div>
+    <input id="name-input" type="text" placeholder="你的名字" maxlength="8" autocomplete="off">
+    <button id="start-btn">▶ 開始派對！</button>
+    <div class="ns-deco">🍬 🍪 🎂 🍭 🍩</div>
+  </div>
+
+  <!-- HUD -->
+  <div id="hud">
+    <div class="hud-block">
+      <div class="hud-label">SCORE</div>
+      <div class="hud-val" id="score-val">0</div>
+    </div>
+    <div class="hud-block" style="text-align:center">
+      <div class="hud-val" style="font-size:12px;color:#e0c8ff" id="player-name-hud">—</div>
+      <div class="hud-label" style="margin-top:2px">COMBO</div>
+      <div class="hud-val" id="combo-val">0</div>
+    </div>
+    <div class="hud-block">
+      <div class="hud-label">TIME</div>
+      <div class="hud-val" id="timer-val">60</div>
+    </div>
+  </div>
+  <div id="timer-bar-wrap"><div id="timer-bar"></div></div>
+
+  <!-- 棋盤 -->
+  <div id="board-wrap">
+    <div id="board"></div>
+    <canvas id="line-canvas"></canvas>
+    <div id="combo-msg"></div>
+  </div>
+
+  <!-- 結束畫面 -->
+  <div id="end-screen">
+    <div class="end-header">
+      <div class="end-title">🎉 時間到！</div>
+      <div class="end-player" id="end-player-name"></div>
+    </div>
+
+    <div class="end-house-wrap">
+      <div class="house-svg-wrap" id="house-svg-wrap"></div>
+      <div class="house-rank-label">YOUR CANDY HOUSE</div>
+      <div class="house-rank-name" id="house-rank-name"></div>
+    </div>
+
+    <div class="end-scores">
+      <div class="end-score-box">
+        <div class="end-score-label">THIS ROUND</div>
+        <div class="end-score-val" id="end-score">0</div>
+      </div>
+      <div class="end-score-box best">
+        <div class="end-score-label">BEST</div>
+        <div class="end-score-val" id="end-best">0</div>
+      </div>
+    </div>
+    <div class="end-new-best" id="new-best-msg">⭐ 新紀錄！</div>
+
+    <div class="end-btn-area">
+      <button id="retry-btn">↺ 再玩一次</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const ITEMS = ['🍬','🍪','🎂','🍭','🍩','🍫'];
+  const COLS = 6, ROWS = 8;
+  const TOTAL_TIME = 60;
+
+  // ── 糖果屋設定 ──
+  const HOUSES = [
+    {
+      min:0, max:1999,
+      name:'小木屋', glow:'#c8a87a',
+      svg: `<svg viewBox="0 0 180 160" xmlns="http://www.w3.org/2000/svg">
+        <!-- 地基 -->
+        <rect x="30" y="90" width="120" height="65" rx="4" fill="#8B6914"/>
+        <!-- 牆 -->
+        <rect x="38" y="98" width="104" height="57" rx="3" fill="#c8a87a"/>
+        <!-- 木紋 -->
+        <line x1="38" y1="115" x2="142" y2="115" stroke="#8B6914" stroke-width="2" opacity="0.4"/>
+        <line x1="38" y1="132" x2="142" y2="132" stroke="#8B6914" stroke-width="2" opacity="0.4"/>
+        <!-- 屋頂 -->
+        <polygon points="20,95 90,42 160,95" fill="#5c3d1a"/>
+        <polygon points="28,95 90,48 152,95" fill="#7a5230"/>
+        <!-- 門 -->
+        <rect x="72" y="122" width="36" height="33" rx="4" fill="#5c3d1a"/>
+        <circle cx="104" cy="139" r="3" fill="#ffd32a"/>
+        <!-- 窗 -->
+        <rect x="45" y="108" width="24" height="20" rx="3" fill="#a8d4f5" opacity="0.7"/>
+        <line x1="57" y1="108" x2="57" y2="128" stroke="#5c3d1a" stroke-width="1.5"/>
+        <line x1="45" y1="118" x2="69" y2="118" stroke="#5c3d1a" stroke-width="1.5"/>
+        <rect x="111" y="108" width="24" height="20" rx="3" fill="#a8d4f5" opacity="0.7"/>
+        <line x1="123" y1="108" x2="123" y2="128" stroke="#5c3d1a" stroke-width="1.5"/>
+        <line x1="111" y1="118" x2="135" y2="118" stroke="#5c3d1a" stroke-width="1.5"/>
+        <!-- 煙囪 -->
+        <rect x="118" y="52" width="16" height="30" rx="2" fill="#5c3d1a"/>
+        <!-- 小裝飾 -->
+        <text x="90" y="38" text-anchor="middle" font-size="14">🌿</text>
+      </svg>`
+    },
+    {
+      min:2000, max:3999,
+      name:'薑餅屋', glow:'#e8a84a',
+      svg: `<svg viewBox="0 0 180 160" xmlns="http://www.w3.org/2000/svg">
+        <!-- 地基 -->
+        <rect x="28" y="88" width="124" height="67" rx="6" fill="#c8622a"/>
+        <!-- 牆 -->
+        <rect x="36" y="96" width="108" height="59" rx="4" fill="#e8a84a"/>
+        <!-- 糖果裝飾條 -->
+        <rect x="36" y="96" width="108" height="8" rx="0" fill="#ff6eb4" opacity="0.6"/>
+        <rect x="36" y="140" width="108" height="8" rx="0" fill="#ff6eb4" opacity="0.6"/>
+        <!-- 屋頂 -->
+        <polygon points="18,93 90,36 162,93" fill="#c8622a"/>
+        <polygon points="26,93 90,42 154,93" fill="#e8622a"/>
+        <!-- 屋頂糖果點點 -->
+        <circle cx="60" cy="72" r="5" fill="#fff" opacity="0.8"/>
+        <circle cx="75" cy="60" r="5" fill="#ff85c8" opacity="0.9"/>
+        <circle cx="90" cy="50" r="5" fill="#fff" opacity="0.8"/>
+        <circle cx="105" cy="60" r="5" fill="#ffd32a" opacity="0.9"/>
+        <circle cx="120" cy="72" r="5" fill="#fff" opacity="0.8"/>
+        <!-- 屋脊糖霜 -->
+        <polyline points="26,93 90,42 154,93" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.7"/>
+        <!-- 門 -->
+        <rect x="70" y="118" width="40" height="37" rx="6" fill="#c8622a"/>
+        <rect x="73" y="121" width="34" height="31" rx="4" fill="#7a3010" opacity="0.5"/>
+        <circle cx="107" cy="138" r="3.5" fill="#ffd32a"/>
+        <!-- 窗 -->
+        <rect x="43" y="104" width="26" height="22" rx="4" fill="#ffd32a" opacity="0.4"/>
+        <line x1="56" y1="104" x2="56" y2="126" stroke="#c8622a" stroke-width="2"/>
+        <line x1="43" y1="115" x2="69" y2="115" stroke="#c8622a" stroke-width="2"/>
+        <rect x="111" y="104" width="26" height="22" rx="4" fill="#ffd32a" opacity="0.4"/>
+        <line x1="124" y1="104" x2="124" y2="126" stroke="#c8622a" stroke-width="2"/>
+        <line x1="111" y1="115" x2="137" y2="115" stroke="#c8622a" stroke-width="2"/>
+        <!-- 棒棒糖 -->
+        <circle cx="28" cy="108" r="10" fill="#ff6eb4" stroke="#fff" stroke-width="2"/>
+        <line x1="28" y1="118" x2="28" y2="140" stroke="#c8622a" stroke-width="3"/>
+        <circle cx="152" cy="108" r="10" fill="#a29bfe" stroke="#fff" stroke-width="2"/>
+        <line x1="152" y1="118" x2="152" y2="140" stroke="#c8622a" stroke-width="3"/>
+        <text x="90" y="34" text-anchor="middle" font-size="14">✨</text>
+      </svg>`
+    },
+    {
+      min:4000, max:5999,
+      name:'糖果小屋', glow:'#ff85c8',
+      svg: `<svg viewBox="0 0 180 160" xmlns="http://www.w3.org/2000/svg">
+        <!-- 地基 -->
+        <rect x="24" y="86" width="132" height="70" rx="8" fill="#ff4d9e"/>
+        <!-- 牆 -->
+        <rect x="32" y="94" width="116" height="62" rx="6" fill="#ffb3d9"/>
+        <!-- 糖果條紋 -->
+        <rect x="32" y="94" width="116" height="10" fill="#ff85c8"/>
+        <rect x="32" y="116" width="116" height="8" fill="#ff85c8"/>
+        <rect x="32" y="136" width="116" height="8" fill="#ff85c8"/>
+        <!-- 屋頂 -->
+        <polygon points="14,92 90,30 166,92" fill="#c0005a"/>
+        <polygon points="22,92 90,36 158,92" fill="#ff4d9e"/>
+        <!-- 屋頂奶油 -->
+        <path d="M22,92 Q35,80 48,90 Q60,78 72,88 Q82,76 90,82 Q98,76 108,88 Q120,78 132,90 Q145,80 158,92" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+        <!-- 糖霜滴落 -->
+        <path d="M45,92 Q45,100 42,105" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M90,82 Q90,94 87,100" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M135,92 Q135,100 138,106" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <!-- 愛心窗 -->
+        <path d="M50,107 C50,103 45,100 42,103 C39,106 42,110 50,115 C58,110 61,106 58,103 C55,100 50,103 50,107Z" fill="#ff4d9e"/>
+        <path d="M130,107 C130,103 125,100 122,103 C119,106 122,110 130,115 C138,110 141,106 138,103 C135,100 130,103 130,107Z" fill="#ff4d9e"/>
+        <!-- 拱形門 -->
+        <path d="M70,156 L70,122 Q90,108 110,122 L110,156Z" fill="#c0005a"/>
+        <path d="M73,156 L73,124 Q90,112 107,124 L107,156Z" fill="#7a0038" opacity="0.4"/>
+        <circle cx="104" cy="138" r="3" fill="#ffd32a"/>
+        <!-- 棒棒糖x3 -->
+        <circle cx="22" cy="100" r="9" fill="#ffd32a" stroke="#fff" stroke-width="2"/>
+        <line x1="22" y1="109" x2="22" y2="130" stroke="#c8622a" stroke-width="3"/>
+        <circle cx="158" cy="100" r="9" fill="#0be881" stroke="#fff" stroke-width="2"/>
+        <line x1="158" y1="109" x2="158" y2="130" stroke="#c8622a" stroke-width="3"/>
+        <!-- 星星裝飾 -->
+        <text x="90" y="28" text-anchor="middle" font-size="16">🍬</text>
+      </svg>`
+    },
+    {
+      min:6000, max:7999,
+      name:'奶油城堡', glow:'#a29bfe',
+      svg: `<svg viewBox="0 0 180 160" xmlns="http://www.w3.org/2000/svg">
+        <!-- 城牆 -->
+        <rect x="20" y="80" width="140" height="75" rx="4" fill="#7a5ca0"/>
+        <rect x="28" y="88" width="124" height="67" rx="4" fill="#b8a0d8"/>
+        <!-- 主塔 -->
+        <rect x="60" y="55" width="60" height="100" rx="4" fill="#9370c8"/>
+        <rect x="65" y="60" width="50" height="95" rx="3" fill="#c8b0e8"/>
+        <!-- 側塔 -->
+        <rect x="20" y="70" width="36" height="85" rx="3" fill="#7a5ca0"/>
+        <rect x="24" y="75" width="28" height="80" rx="2" fill="#a888c8"/>
+        <rect x="124" y="70" width="36" height="85" rx="3" fill="#7a5ca0"/>
+        <rect x="128" y="75" width="28" height="80" rx="2" fill="#a888c8"/>
+        <!-- 主塔尖頂 -->
+        <polygon points="60,55 90,20 120,55" fill="#5a3a80"/>
+        <polygon points="63,55 90,24 117,55" fill="#9370c8"/>
+        <!-- 側塔尖頂 -->
+        <polygon points="20,70 38,45 56,70" fill="#5a3a80"/>
+        <polygon points="23,70 38,48 53,70" fill="#7a5ca0"/>
+        <polygon points="124,70 142,45 160,70" fill="#5a3a80"/>
+        <polygon points="127,70 142,48 157,70" fill="#7a5ca0"/>
+        <!-- 旗幟 -->
+        <line x1="90" y1="20" x2="90" y2="5" stroke="#ffd32a" stroke-width="2"/>
+        <polygon points="90,5 105,11 90,17" fill="#ff85c8"/>
+        <line x1="38" y1="45" x2="38" y2="32" stroke="#ffd32a" stroke-width="2"/>
+        <polygon points="38,32 50,37 38,42" fill="#0be881"/>
+        <line x1="142" y1="45" x2="142" y2="32" stroke="#ffd32a" stroke-width="2"/>
+        <polygon points="142,32 154,37 142,42" fill="#ffd32a"/>
+        <!-- 城牆垛口 -->
+        <rect x="20" y="72" width="8" height="10" rx="1" fill="#5a3a80"/>
+        <rect x="32" y="72" width="8" height="10" rx="1" fill="#5a3a80"/>
+        <rect x="44" y="72" width="8" height="10" rx="1" fill="#5a3a80"/>
+        <rect x="124" y="72" width="8" height="10" rx="1" fill="#5a3a80"/>
+        <rect x="136" y="72" width="8" height="10" rx="1" fill="#5a3a80"/>
+        <rect x="148" y="72" width="8" height="10" rx="1" fill="#5a3a80"/>
+        <!-- 主門 -->
+        <path d="M72,155 L72,118 Q90,104 108,118 L108,155Z" fill="#5a3a80"/>
+        <circle cx="104" cy="136" r="3" fill="#ffd32a"/>
+        <!-- 主塔窗 -->
+        <rect x="75" y="70" width="30" height="24" rx="3" fill="#ffd32a" opacity="0.5"/>
+        <line x1="90" y1="70" x2="90" y2="94" stroke="#5a3a80" stroke-width="2"/>
+        <line x1="75" y1="82" x2="105" y2="82" stroke="#5a3a80" stroke-width="2"/>
+        <!-- 側塔窗 -->
+        <rect x="30" y="90" width="16" height="14" rx="2" fill="#ffd32a" opacity="0.4"/>
+        <rect x="134" y="90" width="16" height="14" rx="2" fill="#ffd32a" opacity="0.4"/>
+        <!-- 糖霜裝飾 -->
+        <path d="M60,55 Q75,48 90,52 Q105,48 120,55" fill="none" stroke="#fff" stroke-width="3" opacity="0.7"/>
+        <text x="90" y="18" text-anchor="middle" font-size="12">✨</text>
+      </svg>`
+    },
+    {
+      min:8000, max:9999,
+      name:'彩虹糖果宮殿', glow:'#0be881',
+      svg: `<svg viewBox="0 0 180 160" xmlns="http://www.w3.org/2000/svg">
+        <!-- 彩虹底 -->
+        <path d="M10,155 Q90,40 170,155" fill="none" stroke="#ff6eb4" stroke-width="6" opacity="0.3"/>
+        <path d="M18,155 Q90,52 162,155" fill="none" stroke="#ffd32a" stroke-width="5" opacity="0.3"/>
+        <path d="M26,155 Q90,64 154,155" fill="none" stroke="#0be881" stroke-width="4" opacity="0.3"/>
+        <!-- 宮殿主體 -->
+        <rect x="28" y="82" width="124" height="73" rx="6" fill="#3a0070"/>
+        <rect x="35" y="90" width="110" height="65" rx="5" fill="#7a20d0"/>
+        <!-- 中塔 -->
+        <rect x="55" y="48" width="70" height="107" rx="5" fill="#5a10b0"/>
+        <rect x="61" y="54" width="58" height="101" rx="4" fill="#9040e0"/>
+        <!-- 側塔 -->
+        <rect x="16" y="65" width="40" height="90" rx="4" fill="#3a0070"/>
+        <rect x="21" y="70" width="30" height="85" rx="3" fill="#6a20c0"/>
+        <rect x="124" y="65" width="40" height="90" rx="4" fill="#3a0070"/>
+        <rect x="129" y="70" width="30" height="85" rx="3" fill="#6a20c0"/>
+        <!-- 中塔尖 -->
+        <polygon points="55,48 90,8 125,48" fill="#2a0050"/>
+        <polygon points="59,48 90,14 121,48" fill="#8000ff"/>
+        <!-- 側塔尖 -->
+        <polygon points="16,65 36,36 56,65" fill="#2a0050"/>
+        <polygon points="19,65 36,39 53,65" fill="#5a10b0"/>
+        <polygon points="124,65 144,36 164,65" fill="#2a0050"/>
+        <polygon points="127,65 144,39 161,65" fill="#5a10b0"/>
+        <!-- 彩虹旗 -->
+        <line x1="90" y1="8" x2="90" y2="-4" stroke="#ffd32a" stroke-width="2"/>
+        <polygon points="90,-4 108,3 90,10" fill="#ff6eb4"/>
+        <!-- 星星散落 -->
+        <text x="30" y="55" font-size="11">⭐</text>
+        <text x="140" y="55" font-size="11">⭐</text>
+        <text x="85" y="6" font-size="10">🌈</text>
+        <!-- 糖霜奶油 -->
+        <path d="M35,90 Q52,80 70,88 Q82,76 90,82 Q98,76 110,88 Q128,80 145,90" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+        <!-- 彩色糖霜滴 -->
+        <circle cx="50" cy="92" r="4" fill="#ff6eb4" opacity="0.9"/>
+        <circle cx="90" cy="84" r="4" fill="#0be881" opacity="0.9"/>
+        <circle cx="130" cy="92" r="4" fill="#ffd32a" opacity="0.9"/>
+        <!-- 主門 -->
+        <path d="M70,155 L70,118 Q90,102 110,118 L110,155Z" fill="#2a0050"/>
+        <path d="M73,155 L73,120 Q90,106 107,120 L107,155Z" fill="#3a0070" opacity="0.5"/>
+        <circle cx="106" cy="136" r="3.5" fill="#ffd32a"/>
+        <!-- 窗 -->
+        <path d="M68,65 C68,60 74,57 80,60 C86,57 92,60 92,65 L92,80 L68,80Z" fill="#ffd32a" opacity="0.5"/>
+        <line x1="80" y1="57" x2="80" y2="80" stroke="#2a0050" stroke-width="1.5"/>
+        <line x1="68" y1="70" x2="92" y2="70" stroke="#2a0050" stroke-width="1.5"/>
+        <rect x="26" y="82" width="18" height="15" rx="3" fill="#ffd32a" opacity="0.4"/>
+        <rect x="136" y="82" width="18" height="15" rx="3" fill="#ffd32a" opacity="0.4"/>
+      </svg>`
+    },
+    {
+      min:10000, max:Infinity,
+      name:'夢幻糖果王國', glow:'#ffd32a',
+      svg: `<svg viewBox="0 0 180 160" xmlns="http://www.w3.org/2000/svg">
+        <!-- 光暈底 -->
+        <circle cx="90" cy="100" r="75" fill="#ffd32a" opacity="0.06"/>
+        <circle cx="90" cy="100" r="55" fill="#ff85c8" opacity="0.06"/>
+        <!-- 主宮殿 -->
+        <rect x="30" y="78" width="120" height="77" rx="6" fill="#c8000a"/>
+        <rect x="37" y="85" width="106" height="70" rx="5" fill="#ff4040"/>
+        <!-- 中央大塔 -->
+        <rect x="55" y="40" width="70" height="115" rx="6" fill="#a00008"/>
+        <rect x="61" y="46" width="58" height="109" rx="5" fill="#ff2020"/>
+        <!-- 兩側中塔 -->
+        <rect x="18" y="58" width="44" height="97" rx="4" fill="#c8000a"/>
+        <rect x="23" y="63" width="34" height="92" rx="3" fill="#ff4040"/>
+        <rect x="118" y="58" width="44" height="97" rx="4" fill="#c8000a"/>
+        <rect x="123" y="63" width="34" height="92" rx="3" fill="#ff4040"/>
+        <!-- 小角塔 -->
+        <rect x="8" y="75" width="18" height="80" rx="3" fill="#a00008"/>
+        <rect x="154" y="75" width="18" height="80" rx="3" fill="#a00008"/>
+        <!-- 中塔尖 -->
+        <polygon points="55,40 90,2 125,40" fill="#7a0005"/>
+        <polygon points="59,40 90,7 121,40" fill="#e00010"/>
+        <!-- 中側塔尖 -->
+        <polygon points="18,58 40,28 62,58" fill="#7a0005"/>
+        <polygon points="21,58 40,31 59,58" fill="#a00008"/>
+        <polygon points="118,58 140,28 162,58" fill="#7a0005"/>
+        <polygon points="121,58 140,31 159,58" fill="#a00008"/>
+        <!-- 小塔尖 -->
+        <polygon points="8,75 17,60 26,75" fill="#7a0005"/>
+        <polygon points="154,75 163,60 172,75" fill="#7a0005"/>
+        <!-- 旗幟全開 -->
+        <line x1="90" y1="2" x2="90" y2="-10" stroke="#ffd32a" stroke-width="2.5"/>
+        <polygon points="90,-10 110,-3 90,4" fill="#ffd32a"/>
+        <line x1="40" y1="28" x2="40" y2="16" stroke="#ffd32a" stroke-width="2"/>
+        <polygon points="40,16 56,22 40,28" fill="#ff85c8"/>
+        <line x1="140" y1="28" x2="140" y2="16" stroke="#ffd32a" stroke-width="2"/>
+        <polygon points="140,16 156,22 140,28" fill="#0be881"/>
+        <!-- 奶油糖霜豪華版 -->
+        <path d="M37,85 Q52,72 68,83 Q78,68 90,76 Q102,68 112,83 Q128,72 143,85" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+        <!-- 糖霜滴 -->
+        <path d="M55,87 Q54,96 52,102" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M90,78 Q89,90 87,96" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M125,87 Q126,96 128,103" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <!-- 皇冠 on 尖塔 -->
+        <text x="90" y="0" text-anchor="middle" font-size="13">👑</text>
+        <!-- 主門 -->
+        <path d="M70,155 L70,115 Q90,98 110,115 L110,155Z" fill="#7a0005"/>
+        <path d="M73,155 L73,117 Q90,103 107,117 L107,155Z" fill="#a00008" opacity="0.4"/>
+        <circle cx="106" cy="135" r="4" fill="#ffd32a"/>
+        <!-- 黃金窗 -->
+        <path d="M66,58 C66,52 73,48 80,52 C87,48 94,52 94,58 L94,76 L66,76Z" fill="#ffd32a" opacity="0.6"/>
+        <line x1="80" y1="48" x2="80" y2="76" stroke="#7a0005" stroke-width="2"/>
+        <line x1="66" y1="65" x2="94" y2="65" stroke="#7a0005" stroke-width="2"/>
+        <rect x="28" y="75" width="20" height="16" rx="3" fill="#ffd32a" opacity="0.5"/>
+        <rect x="132" y="75" width="20" height="16" rx="3" fill="#ffd32a" opacity="0.5"/>
+        <!-- 棒棒糖衛兵 -->
+        <circle cx="14" cy="92" r="7" fill="#ff85c8" stroke="#fff" stroke-width="2"/>
+        <line x1="14" y1="99" x2="14" y2="118" stroke="#c8622a" stroke-width="3"/>
+        <circle cx="166" cy="92" r="7" fill="#a29bfe" stroke="#fff" stroke-width="2"/>
+        <line x1="166" y1="99" x2="166" y2="118" stroke="#c8622a" stroke-width="3"/>
+        <!-- 星星散落 -->
+        <text x="20" y="62" font-size="10">⭐</text>
+        <text x="150" y="62" font-size="10">⭐</text>
+        <text x="8" y="160" font-size="10">✨</text>
+        <text x="163" y="160" font-size="10">✨</text>
+      </svg>`
+    }
+  ];
+
+  function getHouse(s){
+    return HOUSES.find(h=>s>=h.min&&s<=h.max) || HOUSES[HOUSES.length-1];
+  }
+
+  let board=[], cells=[];
+  let score=0, combo=0, bestScore=0;
+  let timeLeft=TOTAL_TIME, running=false, playerName='';
+  let dragging=false, selectedPath=[];
+  let countTimer=null, comboTO=null;
+  let canvas, ctx;
+
+  const nameScreen    = document.getElementById('name-screen');
+  const nameInput     = document.getElementById('name-input');
+  const startBtn      = document.getElementById('start-btn');
+  const endScreen     = document.getElementById('end-screen');
+  const retryBtn      = document.getElementById('retry-btn');
+  const boardEl       = document.getElementById('board');
+  const boardWrap     = document.getElementById('board-wrap');
+  const scoreEl       = document.getElementById('score-val');
+  const comboEl       = document.getElementById('combo-val');
+  const timerEl       = document.getElementById('timer-val');
+  const timerBar      = document.getElementById('timer-bar');
+  const playerNameHud = document.getElementById('player-name-hud');
+  const endScoreEl    = document.getElementById('end-score');
+  const endBestEl     = document.getElementById('end-best');
+  const newBestMsg    = document.getElementById('new-best-msg');
+  const comboMsg      = document.getElementById('combo-msg');
+  const houseSvgWrap  = document.getElementById('house-svg-wrap');
+  const houseRankName = document.getElementById('house-rank-name');
+  const endPlayerName = document.getElementById('end-player-name');
+  canvas = document.getElementById('line-canvas');
+  ctx    = canvas.getContext('2d');
+
+  // 背景
+  const bgEl=document.getElementById('bg');
+  for(let i=0;i<40;i++){
+    const s=document.createElement('div'); s.className='bg-star';
+    const sz=Math.random()*2+1;
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${2+Math.random()*4}s;animation-delay:${Math.random()*4}s`;
+    bgEl.appendChild(s);
+  }
+  ['🍬','🍪','🍭','🍩','🍫'].forEach((c,i)=>{
+    const el=document.createElement('div'); el.className='bg-candy'; el.textContent=c;
+    el.style.cssText=`left:${(i+0.5)*20}%;animation-duration:${9+i*2}s;animation-delay:${i*1.5}s`;
+    bgEl.appendChild(el);
+  });
+
+  function randItem(){ return ITEMS[Math.floor(Math.random()*ITEMS.length)]; }
+  function initBoard(){
+    board=[];
+    for(let r=0;r<ROWS;r++){ board[r]=[]; for(let c=0;c<COLS;c++) board[r][c]=randItem(); }
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+      let t=0; while(t<20&&hasInitialMatch(r,c)){ board[r][c]=randItem(); t++; }
+    }
+  }
+  function hasInitialMatch(r,c){
+    const v=board[r][c];
+    if(c>=2&&board[r][c-1]===v&&board[r][c-2]===v) return true;
+    if(r>=2&&board[r-1][c]===v&&board[r-2][c]===v) return true;
+    return false;
+  }
+
+  function renderBoard(){
+    boardEl.innerHTML=''; cells=[];
+    for(let r=0;r<ROWS;r++){ cells[r]=[];
+      for(let c=0;c<COLS;c++){
+        const el=document.createElement('div');
+        el.className='cell'; el.textContent=board[r][c];
+        el.dataset.r=r; el.dataset.c=c;
+        boardEl.appendChild(el); cells[r][c]=el;
+      }
+    }
+    resizeCanvas();
+  }
+  function renderBoardWithAnim(){
+    boardEl.innerHTML=''; cells=[];
+    for(let r=0;r<ROWS;r++){ cells[r]=[];
+      for(let c=0;c<COLS;c++){
+        const el=document.createElement('div');
+        el.className='cell falling'; el.textContent=board[r][c];
+        el.dataset.r=r; el.dataset.c=c;
+        boardEl.appendChild(el); cells[r][c]=el;
+      }
+    }
+    resizeCanvas();
+  }
+
+  function resizeCanvas(){
+    const rect=boardEl.getBoundingClientRect();
+    const wRect=boardWrap.getBoundingClientRect();
+    canvas.width=rect.width; canvas.height=rect.height;
+    canvas.style.left=(rect.left-wRect.left)+'px';
+    canvas.style.top=(rect.top-wRect.top)+'px';
+  }
+  function cellCenter(r,c){
+    const el=cells[r][c]; const br=el.getBoundingClientRect(); const cr=canvas.getBoundingClientRect();
+    return {x:br.left+br.width/2-cr.left, y:br.top+br.height/2-cr.top};
+  }
+  function drawLines(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(selectedPath.length<2) return;
+    const item=board[selectedPath[0].r][selectedPath[0].c];
+    const colors={'🍬':'#ff85c8','🍪':'#ffd32a','🎂':'#a29bfe','🍭':'#0be881','🍩':'#ff6b6b','🍫':'#c8622a'};
+    const col=colors[item]||'#fff';
+    ctx.strokeStyle=col; ctx.lineWidth=7; ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.shadowColor=col; ctx.shadowBlur=14; ctx.globalAlpha=0.75;
+    ctx.beginPath();
+    const f=cellCenter(selectedPath[0].r,selectedPath[0].c);
+    ctx.moveTo(f.x,f.y);
+    for(let i=1;i<selectedPath.length;i++){
+      const p=cellCenter(selectedPath[i].r,selectedPath[i].c); ctx.lineTo(p.x,p.y);
+    }
+    ctx.stroke(); ctx.globalAlpha=1; ctx.shadowBlur=0;
+  }
+
+  function getCellFromPoint(x,y){
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+      const rect=cells[r][c].getBoundingClientRect();
+      if(x>=rect.left&&x<=rect.right&&y>=rect.top&&y<=rect.bottom) return {r,c};
+    }
+    return null;
+  }
+  function isAdjacent(a,b){ return Math.abs(a.r-b.r)<=1&&Math.abs(a.c-b.c)<=1&&!(a.r===b.r&&a.c===b.c); }
+  function inPath(r,c){ return selectedPath.some(p=>p.r===r&&p.c===c); }
+
+  function getPoint(e){
+    if(e.touches&&e.touches.length>0) return {x:e.touches[0].clientX,y:e.touches[0].clientY};
+    return {x:e.clientX,y:e.clientY};
+  }
+  function onDragStart(e){
+    if(!running) return; if(e.cancelable) e.preventDefault();
+    const {x,y}=getPoint(e); const cell=getCellFromPoint(x,y); if(!cell) return;
+    dragging=true; selectedPath=[cell]; cells[cell.r][cell.c].classList.add('selected'); drawLines();
+  }
+  function onDragMove(e){
+    if(!running||!dragging) return; if(e.cancelable) e.preventDefault();
+    const {x,y}=getPoint(e); const cell=getCellFromPoint(x,y); if(!cell) return;
+    const last=selectedPath[selectedPath.length-1];
+    const item=board[selectedPath[0].r][selectedPath[0].c];
+    if(selectedPath.length>=2){
+      const prev=selectedPath[selectedPath.length-2];
+      if(prev.r===cell.r&&prev.c===cell.c){
+        cells[last.r][last.c].classList.remove('selected'); selectedPath.pop(); drawLines(); return;
+      }
+    }
+    if(inPath(cell.r,cell.c)) return;
+    if(board[cell.r][cell.c]!==item) return;
+    if(!isAdjacent(last,cell)) return;
+    selectedPath.push(cell); cells[cell.r][cell.c].classList.add('selected'); drawLines();
+  }
+  function onDragEnd(e){
+    if(!running||!dragging) return; if(e.cancelable) e.preventDefault();
+    dragging=false; ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(selectedPath.length>=3){ triggerMatch(); }
+    else { selectedPath.forEach(p=>cells[p.r][p.c].classList.remove('selected')); selectedPath=[]; }
+  }
+
+  function triggerMatch(){
+    const len=selectedPath.length; const pts=calcScore(len);
+    score+=pts; combo++;
+    scoreEl.textContent=score; comboEl.textContent=combo;
+    showScorePopup(pts,selectedPath[Math.floor(len/2)]);
+    if(combo>=3) showComboMsg(combo);
+    selectedPath.forEach(p=>{ cells[p.r][p.c].classList.remove('selected'); cells[p.r][p.c].classList.add('matched'); });
+    setTimeout(applyGravity,250);
+  }
+  function calcScore(len){
+    const base=[0,0,0,30,60,100,150,220];
+    const pts=len<base.length?base[len]:base[base.length-1]+(len-7)*40;
+    return pts*Math.max(1,Math.floor(combo/3)+1);
+  }
+  function applyGravity(){
+    selectedPath.forEach(p=>{ board[p.r][p.c]=null; }); selectedPath=[];
+    for(let c=0;c<COLS;c++){
+      let empty=[];
+      for(let r=ROWS-1;r>=0;r--){
+        if(board[r][c]===null) empty.push(r);
+        else if(empty.length>0){ const t=empty.shift(); board[t][c]=board[r][c]; board[r][c]=null; empty.push(r); }
+      }
+      for(let r=0;r<ROWS;r++) if(board[r][c]===null) board[r][c]=randItem();
+    }
+    renderBoardWithAnim();
+  }
+
+  function showScorePopup(pts,pos){
+    const el=cells[pos.r][pos.c]; const rect=el.getBoundingClientRect(); const wRect=boardWrap.getBoundingClientRect();
+    const pop=document.createElement('div'); pop.className='score-popup'; pop.textContent='+'+pts;
+    pop.style.left=(rect.left-wRect.left+rect.width/2-20)+'px'; pop.style.top=(rect.top-wRect.top)+'px';
+    boardWrap.appendChild(pop); setTimeout(()=>pop.remove(),800);
+  }
+  function showComboMsg(c){
+    if(comboTO) clearTimeout(comboTO);
+    comboMsg.textContent=c+'x COMBO! 🎉';
+    comboMsg.classList.remove('show'); void comboMsg.offsetWidth; comboMsg.classList.add('show');
+    comboTO=setTimeout(()=>comboMsg.classList.remove('show'),600);
+  }
+
+  function startTimer(){
+    timeLeft=TOTAL_TIME; timerEl.textContent=TOTAL_TIME; timerBar.style.width='100%';
+    countTimer=setInterval(()=>{
+      timeLeft-=0.1;
+      timerBar.style.width=(Math.max(0,timeLeft/TOTAL_TIME)*100)+'%';
+      timerEl.textContent=Math.ceil(timeLeft);
+      if(timeLeft<=0){ clearInterval(countTimer); endGame(); }
+    },100);
+  }
+
+  function startGame(){
+    score=0; combo=0; scoreEl.textContent='0'; comboEl.textContent='0';
+    if(countTimer) clearInterval(countTimer);
+    initBoard(); renderBoard(); endScreen.style.display='none'; running=true;
+    startTimer();
+    boardEl.addEventListener('touchstart',onDragStart,{passive:false});
+    boardEl.addEventListener('touchmove',onDragMove,{passive:false});
+    boardEl.addEventListener('touchend',onDragEnd,{passive:false});
+    boardEl.addEventListener('mousedown',onDragStart);
+    window.addEventListener('mousemove',onDragMove);
+    window.addEventListener('mouseup',onDragEnd);
+  }
+
+  function endGame(){
+    running=false; dragging=false; ctx.clearRect(0,0,canvas.width,canvas.height);
+    boardEl.removeEventListener('touchstart',onDragStart);
+    boardEl.removeEventListener('touchmove',onDragMove);
+    boardEl.removeEventListener('touchend',onDragEnd);
+    boardEl.removeEventListener('mousedown',onDragStart);
+    window.removeEventListener('mousemove',onDragMove);
+    window.removeEventListener('mouseup',onDragEnd);
+    const isNew=score>bestScore; if(isNew) bestScore=score;
+    endScoreEl.textContent=score; endBestEl.textContent=bestScore;
+    newBestMsg.style.display=isNew?'block':'none';
+    endPlayerName.textContent=playerName;
+    // 糖果屋
+    const h=getHouse(score);
+    houseSvgWrap.innerHTML=h.svg;
+    houseSvgWrap.style.setProperty('--house-glow',h.glow);
+    houseRankName.style.setProperty('--house-glow',h.glow);
+    houseRankName.textContent=h.name;
+    endScreen.style.display='flex';
+  }
+
+  function handleStart(){
+    const name=nameInput.value.trim(); if(!name){ nameInput.focus(); return; }
+    playerName=name; playerNameHud.textContent=name; nameScreen.style.display='none'; startGame();
+  }
+  startBtn.addEventListener('click',handleStart);
+  startBtn.addEventListener('touchend',function(e){e.preventDefault();handleStart();},{passive:false});
+  nameInput.addEventListener('keydown',function(e){ if(e.key==='Enter') handleStart(); });
+  retryBtn.addEventListener('click',startGame);
+  retryBtn.addEventListener('touchend',function(e){e.preventDefault();startGame();},{passive:false});
+  window.addEventListener('resize',resizeCanvas);
+})();
+</script>
+</body>
+</html>
